@@ -557,6 +557,8 @@ class GameGUI:
                     self.choose_number()
             except ValueError:
                 messagebox.showerror("Kļūda", "Ievadiet derīgu veselu skaitli!")
+                self.reset_game()
+                self.ultramainframe.destroy()
                 self.choose_number()
 
         def set_pl_labels_positions():
