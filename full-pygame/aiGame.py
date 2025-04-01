@@ -8,7 +8,6 @@ import time
 MIN_START = 40000
 MAX_START = 50001
 
-# --- Data structures (Number, GameState) ---
 
 class Number:
     """Хранит число (value), очки (points), банк (bank), финальный счёт (totalPoints) и победителя (winPlayer)."""
@@ -36,6 +35,7 @@ class Number:
 
 
 class GameState:
+
     """Хранит список Number, дочерние состояния (nextStates) и признак final."""
     def __init__(self, current=None):
         self.current = current if current else []
@@ -56,6 +56,8 @@ class GameState:
         if not any_next:
             self.final = True
 
+
+
     @staticmethod
     def calculate_next_numbers(x):
         out = []
@@ -75,6 +77,21 @@ class GameState:
             else:
                 nr.totalPoints = nr.points + nr.bank
                 nr.winPlayer = 1 if nr.totalPoints % 2 == 0 else 2
+
+    def print_endpoints(self):
+        """Новый метод из первого кода – выводит конечные узлы дерева."""
+        if self.final:
+            self.calculate_game_end()
+            for nr in self.current:
+                print("------------------------------")
+                print(f"Value: {nr.value}")
+                print(f"Points: {nr.points}")
+                print(f"Bank: {nr.bank}")
+                print(f"Total Points: {nr.totalPoints}")
+                print(f"Winner: {nr.winPlayer} (1=первый игрок, 2=второй игрок)")
+                print("------------------------------\n")
+        for child in self.nextStates:
+            child.print_endpoints()
 
 
 class Player(Enum):
@@ -124,7 +141,11 @@ class Game:
         return self.gameState.current[0].totalPoints
 
     def set_starting_number(self, number):
+        """Подключаем логику из первого кода: генерируем дерево и печатаем концевые узлы."""
         self.gameState = GameState([Number(number, 0, 0)])
+        self.gameState.find_next_state()
+        # Для наглядности можно сразу посмотреть endpoints:
+        self.gameState.print_endpoints()
 
     def is_divisible_by_345(self, n):
         return n % 3 == 0 and n % 4 == 0 and n % 5 == 0
@@ -267,12 +288,14 @@ class Game:
                     self.visited_nodes += 1
             return value
 
+
 experiment_results = {
     'computer_wins': 0,
     'human_wins': 0,
     'total_visited_nodes': [],
     'average_move_time': []
 }
+
 
 class GameGUI:
     def __init__(self, game):
@@ -292,8 +315,9 @@ class GameGUI:
     def create_del_button(self):
         self.dButtonFrame = ctk.CTkFrame(self.window, fg_color='transparent')
         self.dButtonFrame.pack(fill=ctk.BOTH, padx=15, pady=5)
-        self.dButton = ctk.CTkButton(self.dButtonFrame, text="Restartēt spēli", command=self.switch_frames, state=ctk.DISABLED)
-        self.dButton.pack(side=ctk.RIGHT, padx=15)
+        self.dButton = ctk.CTkButton(self.dButtonFrame, text="Restartēt spēli",
+                                     command=self.switch_frames, state=ctk.DISABLED)
+        self.dButton.pack(side=tk.RIGHT, padx=15)
 
     def create_widgets(self):
         self.supermainframe = ctk.CTkFrame(self.window, fg_color='transparent')
@@ -315,28 +339,44 @@ class GameGUI:
         self.playersname_frame = ctk.CTkFrame(self.widgets_frame)
         self.playersname_frame.pack(pady=5)
 
-        self.first_player_label = ctk.CTkLabel(self.players_frame, text="Pirmais spēlētajs", font=ctk.CTkFont("Arial", size=15, weight="bold"), text_color="#4763c3")
+        self.first_player_label = ctk.CTkLabel(self.players_frame,
+                                               text="Pirmais spēlētajs",
+                                               font=ctk.CTkFont("Arial", size=15, weight="bold"),
+                                               text_color="#4763c3")
         self.first_player_label.pack(side="left", padx=10)
-        self.second_player_label = ctk.CTkLabel(self.players_frame, text="Otrais spēlētajs", font=ctk.CTkFont("Arial", size=15, weight="bold"), text_color="#c35947")
+        self.second_player_label = ctk.CTkLabel(self.players_frame,
+                                                text="Otrais spēlētajs",
+                                                font=ctk.CTkFont("Arial", size=15, weight="bold"),
+                                                text_color="#c35947")
         self.second_player_label.pack(side="right", padx=10)
-        self.label = ctk.CTkLabel(self.buttons_frame, font=ctk.CTkFont("Arial", size=14), text=f"Spēles skaitlis: {self.game.current_number}")
+
+        self.label = ctk.CTkLabel(self.buttons_frame,
+                                  font=ctk.CTkFont("Arial", size=14),
+                                  text=f"Spēles skaitlis: {self.game.current_number}")
         self.label.pack(padx=19, pady=10)
         self.buttons_frame.pack()
 
-        self.player_label = ctk.CTkLabel(self.playersname_frame, text="Cilveks        Dators", font=ctk.CTkFont("Arial", size=15))
+        self.player_label = ctk.CTkLabel(self.playersname_frame, text="Cilveks        Dators",
+                                         font=ctk.CTkFont("Arial", size=15))
         self.player_label.pack(padx=25)
 
-        self.button3 = ctk.CTkButton(self.buttons_frame, text="Dalīt ar 3", command=lambda: self.on_user_move(3))
+        self.button3 = ctk.CTkButton(self.buttons_frame, text="Dalīt ar 3",
+                                     command=lambda: self.on_user_move(3))
         self.button3.pack(pady=5)
-        self.button4 = ctk.CTkButton(self.buttons_frame, text="Dalīt ar 4", command=lambda: self.on_user_move(4))
+        self.button4 = ctk.CTkButton(self.buttons_frame, text="Dalīt ar 4",
+                                     command=lambda: self.on_user_move(4))
         self.button4.pack(pady=5)
-        self.button5 = ctk.CTkButton(self.buttons_frame, text="Dalīt ar 5", command=lambda: self.on_user_move(5))
+        self.button5 = ctk.CTkButton(self.buttons_frame, text="Dalīt ar 5",
+                                     command=lambda: self.on_user_move(5))
         self.button5.pack(pady=5)
 
-        self.history_label = ctk.CTkLabel(self.history_frame, text="Gājienu vēsture:", font=ctk.CTkFont("Arial", size=15))
+        self.history_label = ctk.CTkLabel(self.history_frame, text="Gājienu vēsture:",
+                                          font=ctk.CTkFont("Arial", size=15))
         self.history_label.pack(pady=5, padx=5)
+
         self.history_text = ctk.CTkTextbox(self.history_frame, width=200, height=250)
-        self.history_text.configure(font=("Arial", 17), text_color="green", border_color="gray", border_width=1, corner_radius=10)
+        self.history_text.configure(font=("Arial", 17), text_color="green",
+                                    border_color="gray", border_width=1, corner_radius=10)
         self.history_text.pack(padx=20, pady=10)
 
     def create_score_labels(self):
@@ -344,24 +384,32 @@ class GameGUI:
         self.point_frame.configure(fg_color=('white', '#111111'), border_width=1, border_color="gray")
         self.point_frame.pack(pady=25)
 
-        self.total_points_label = ctk.CTkLabel(self.point_frame, text=f"Kopējie punkti: {self.game.total_points}")
-        self.total_points_label.configure(font=ctk.CTkFont("Arial", size=20, weight="bold"), text_color="#aeb6ff")
+        self.total_points_label = ctk.CTkLabel(self.point_frame,
+                                               text=f"Kopējie punkti: {self.game.total_points}")
+        self.total_points_label.configure(font=ctk.CTkFont("Arial", size=20, weight="bold"),
+                                          text_color="#aeb6ff")
         self.total_points_label.pack(pady=5)
 
         self.plusminus_label = ctk.CTkLabel(self.point_frame, text="+/-")
-        self.plusminus_label.configure(font=ctk.CTkFont("Arial", size=20, weight="bold"), text_color="#aeb6ff")
+        self.plusminus_label.configure(font=ctk.CTkFont("Arial", size=20, weight="bold"),
+                                       text_color="#aeb6ff")
         self.plusminus_label.pack(pady=5)
 
-        self.bank_points_label = ctk.CTkLabel(self.point_frame, text=f"Bankas punkti: {self.game.bank}")
-        self.bank_points_label.configure(font=ctk.CTkFont("Arial", size=20, weight="bold"), text_color="#aeb6ff")
+        self.bank_points_label = ctk.CTkLabel(self.point_frame,
+                                              text=f"Bankas punkti: {self.game.bank}")
+        self.bank_points_label.configure(font=ctk.CTkFont("Arial", size=20, weight="bold"),
+                                         text_color="#aeb6ff")
         self.bank_points_label.pack(pady=5)
 
         self.total_points_divider_label = ctk.CTkLabel(self.point_frame, text="                                  ")
-        self.total_points_divider_label.configure(font=ctk.CTkFont("Arial", size=20, weight="bold", underline=True, overstrike=True))
+        self.total_points_divider_label.configure(font=ctk.CTkFont("Arial", size=20, weight="bold",
+                                                                   underline=True, overstrike=True))
         self.total_points_divider_label.pack(padx=20, pady=2)
 
-        self.final_points_label = ctk.CTkLabel(self.point_frame, text=f"Gala rezultats: {self.game.final_score}")
-        self.final_points_label.configure(font=ctk.CTkFont("Arial", size=20, weight="bold"), text_color="#aeb6ff")
+        self.final_points_label = ctk.CTkLabel(self.point_frame,
+                                               text=f"Gala rezultats: {self.game.final_score}")
+        self.final_points_label.configure(font=ctk.CTkFont("Arial", size=20, weight="bold"),
+                                          text_color="#aeb6ff")
         self.final_points_label.pack(pady=7)
 
     def update_score_labels(self):
@@ -389,7 +437,7 @@ class GameGUI:
             pass
 
         self.ultramainframe = ctk.CTkFrame(self.window, fg_color='transparent')
-        self.ultramainframe.pack(pady=10, fill=ctk.BOTH, padx=15)
+        self.ultramainframe.pack(pady=10, fill=tk.BOTH, padx=15)
 
         self.mainframe = ctk.CTkFrame(self.ultramainframe)
         self.mainframe.pack()
@@ -402,15 +450,18 @@ class GameGUI:
         self.tabview.tab("Izvēlēties").grid_columnconfigure(0, weight=1)
         self.tabview.pack()
 
-        self.insertnumber = ctk.CTkLabel(self.tabview.tab("Ievadīt"), text="Ievadiet skaitli (40000 - 50000):")
+        self.insertnumber = ctk.CTkLabel(self.tabview.tab("Ievadīt"),
+                                         text="Ievadiet skaitli (40000 - 50000):")
         self.insertnumber.configure(font=("Arial", 18), text_color="#84888e")
         self.insertnumber.pack()
 
         number_entry = ctk.CTkEntry(self.tabview.tab("Ievadīt"))
         number_entry.pack(pady=20)
 
-        self.quinbuttonframe = ctk.CTkFrame(self.tabview.tab("Izvēlēties"), fg_color='transparent', height=40)
-        self.quinbuttonframe.pack(pady=10, fill=ctk.BOTH)
+        self.quinbuttonframe = ctk.CTkFrame(self.tabview.tab("Izvēlēties"),
+                                            fg_color='transparent',
+                                            height=40)
+        self.quinbuttonframe.pack(pady=10, fill=tk.BOTH)
 
         choose_button_style = {
             'text_color': 'white',
@@ -452,7 +503,8 @@ class GameGUI:
             for b in button_list:
                 b.configure(text_color="white", fg_color="#3061bf", hover_color="#31559b")
 
-        cancel_button = ctk.CTkButton(self.tabview.tab("Izvēlēties"), text="Atcelt izvēli", command=cancel_choice, **choose_button_style)
+        cancel_button = ctk.CTkButton(self.tabview.tab("Izvēlēties"), text="Atcelt izvēli",
+                                      command=cancel_choice, **choose_button_style)
         self.textstartchoose = ctk.CTkLabel(self.tabview.tab("Izvēlēties"), text="Izvēlies sākuma skaitli")
         self.textstartchoose.configure(font=("Arial", 18))
         self.textstartchoose.pack()
@@ -479,12 +531,14 @@ class GameGUI:
         def on_submit():
             try:
                 if self.selected_number is not None and number_entry.get():
-                    tk.messagebox.showerror("Kļūda", "Jums ir jāizvēlās ģenerēts vai pašam ievadīts skaitlis!")
+                    messagebox.showerror("Kļūda",
+                        "Jums ir jāizvēlās ģenerēts vai pašam ievadīts skaitlis!")
                     self.reset_game()
                 elif self.selected_number is not None:
                     number = self.selected_number
                 else:
                     number = int(number_entry.get())
+
                 if 40000 <= number <= 50000:
                     if number % 3 == 0 and number % 4 == 0 and number % 5 == 0:
                         self.game.set_starting_number(number)
@@ -494,13 +548,15 @@ class GameGUI:
                         if self.game.current_player == Player.COMPUTER:
                             self.computer_move()
                     else:
-                        tk.messagebox.showerror("Kļūda", "Skaitlim jābūt dalāmam ar 3, 4 un 5 bez atlikuma!")
+                        messagebox.showerror("Kļūda",
+                            "Skaitlim jābūt dalāmam ar 3, 4 un 5 bez atlikuma!")
                         self.choose_number()
                 else:
-                    tk.messagebox.showerror("Kļūda", "Skaitlim jābūt diapazonā no 40000 līdz 50000!")
+                    messagebox.showerror("Kļūda",
+                        "Skaitlim jābūt diapazonā no 40000 līdz 50000!")
                     self.choose_number()
             except ValueError:
-                tk.messagebox.showerror("Kļūda", "Ievadiet derīgu veselu skaitli!")
+                messagebox.showerror("Kļūda", "Ievadiet derīgu veselu skaitli!")
                 self.choose_number()
 
         def set_pl_labels_positions():
@@ -509,11 +565,17 @@ class GameGUI:
             else:
                 self.player_label.configure(text="Dators        Cilveks")
 
-        self.gamer = ctk.CTkRadioButton(self.starter_frame, text="Cilveks", variable=starter_var, value=0, command=set_pl_labels_positions)
+        self.gamer = ctk.CTkRadioButton(self.starter_frame, text="Cilveks",
+                                        variable=starter_var,
+                                        value=0,
+                                        command=set_pl_labels_positions)
         self.gamer.configure(font=("Arial", 16))
         self.gamer.pack(pady=5)
 
-        self.pc = ctk.CTkRadioButton(self.starter_frame, text="Dators", variable=starter_var, value=1, command=set_pl_labels_positions)
+        self.pc = ctk.CTkRadioButton(self.starter_frame, text="Dators",
+                                     variable=starter_var,
+                                     value=1,
+                                     command=set_pl_labels_positions)
         self.pc.configure(font=("Arial", 16))
         self.pc.pack(pady=5)
 
@@ -522,15 +584,22 @@ class GameGUI:
         self.choosealgorithm.pack(pady=5)
 
         self.algorithm_var = tk.StringVar(value="minimax")
-        self.mini = ctk.CTkRadioButton(self.algorythm_frame, text="Minimax", variable=self.algorithm_var, value="minimax")
+        self.mini = ctk.CTkRadioButton(self.algorythm_frame, text="Minimax",
+                                       variable=self.algorithm_var,
+                                       value="minimax")
         self.mini.configure(font=("Arial", 16))
         self.mini.pack(pady=5)
 
-        self.alfa = ctk.CTkRadioButton(self.algorythm_frame, text="Alpha-Beta", variable=self.algorithm_var, value="alphabeta")
+        self.alfa = ctk.CTkRadioButton(self.algorythm_frame, text="Alpha-Beta",
+                                       variable=self.algorithm_var,
+                                       value="alphabeta")
         self.alfa.configure(font=("Arial", 16))
         self.alfa.pack(pady=5)
 
-        start_button = ctk.CTkButton(self.mainframe, text="Sākt spēli", command=on_submit, **choose_button_style)
+        start_button = ctk.CTkButton(self.mainframe,
+                                     text="Sākt spēli",
+                                     command=on_submit,
+                                     **choose_button_style)
         start_button.configure(width=40, height=45)
         start_button.pack(pady=15)
 
@@ -552,8 +621,10 @@ class GameGUI:
     def add_end_game_buttons(self):
         self.restart_button = tk.Button(self.window, text="Sākt vēlreiz", command=self.reset_game)
         self.restart_button.pack(pady=5)
+
         def close_program():
             self.window.destroy()
+
         self.exit_button = tk.Button(self.window, text="Pabeigt", command=close_program)
         self.exit_button.pack(pady=5)
 
